@@ -219,12 +219,6 @@
             box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
         }
 
-        .url-warning {
-            color: #e74c3c;
-            font-size: 0.8rem;
-            margin-left: 10px;
-        }
-
         .related-questions {
             margin-top: 15px;
             padding-top: 15px;
@@ -454,7 +448,7 @@
                         <!-- Connection Error -->
                         <div v-if="connectionError" class="error-message">
                             <i class="fas fa-exclamation-triangle"></i>
-                            Unable to connect to the chatbot server. Please make sure the backend is running on http://localhost:5000
+                            Unable to connect to the chatbot server. Please check your internet connection.
                         </div>
 
                         <!-- Welcome Message -->
@@ -600,6 +594,7 @@
             methods: {
                 async checkConnection() {
                     try {
+                        // ✅ FIXED: Using relative URL instead of localhost
                         await axios.get('/api/health');
                         this.connectionError = false;
                     } catch (error) {
@@ -607,9 +602,9 @@
                         this.connectionError = true;
                     }
                 },
-                
                 async loadStats() {
                     try {
+                        // ✅ FIXED: Using relative URL instead of localhost
                         const response = await axios.get('/api/stats');
                         this.stats = response.data;
                     } catch (error) {
@@ -618,6 +613,7 @@
                 },
                 async loadCategories() {
                     try {
+                        // ✅ FIXED: Using relative URL instead of localhost
                         const response = await axios.get('/api/categories');
                         this.categories = response.data.categories;
                         this.categoryCounts = response.data.counts;
@@ -642,7 +638,8 @@
                     this.scrollToBottom();
 
                     try {
-                        const response = await axios.post('http://localhost:5000/api/chat', {
+                        // ✅ FIXED: Using relative URL instead of localhost
+                        const response = await axios.post('/api/chat', {
                             message: messageText
                         });
 
@@ -665,7 +662,7 @@
                         this.messages.push({
                             id: this.messageId++,
                             type: 'bot',
-                            content: 'Sorry, there was an error processing your request. Please try again or check if the server is running.',
+                            content: 'Sorry, there was an error processing your request. Please try again.',
                             category: 'Error',
                             confidence: 0,
                             urls: [],
