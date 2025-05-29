@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motorist Q&A Chatbot</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 90vh;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .stats-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .categories-section h3 {
+            margin-bottom: 15px;
+            color: #3498db;
+        }
+
+        .category-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-item:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+
+        .category-count {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            max-height: calc(90vh - 200px);
+            scroll-behavior: smooth;
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+
+        .scroll-anchor {
+            height: 1px;
+            width: 1px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 15px;
+            font-size: 1.2rem;
+        }
+
+        .user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .bot .message-avatar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .bot .message-content {
+            background: white;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .message-meta {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        .urls-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .url-link {
+            display: block;
+            color: #3498db;
+            text-decoration: none;
+            margin: 8px 0;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-left: 4px solid #3498db;
+            word-break: break-all;
+        }
+
+        .url-link:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+
+        .related-questions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .related-question {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid #28a745;
+        }
+
+        .related-question:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .input-section {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-button {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        .quick-questions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-question {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .quick-question:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .confidence-high { background: #d4edda; color: #155724; }
+        .confidence-medium { background: #fff3cd; color: #856404; }
+        .confidence-low { background: #f8d7da; color: #721c24; }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                height: 100vh;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h2><i class="fas fa-car"></i> Motorist AI</h2>
+                
+                <div class="stats-card">
+                    <div class="stats-number">{{ stats.total_questions }}</div>
+                    <div class="stats-label">Total Questions</div>
+                </div>
+                
+                <div class="stats-card">
+                    <div class="stats-number">{{ stats.total_categories }}</div>
+                    <div class="stats-label">Categories</div>
+                </div>
+                
+                <div class="categories-section">
+                    <h3><i class="fas fa-tags"></i> Categories</h3>
+                    <div v-for="category in categories" :key="category" 
+                         class="category-item" 
+                         @click="askAboutCategory(category)">
+                        <span>{{ category }}</span>
+                        <span class="category-count">{{ categoryCounts[category] }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Header -->
+                <div class="header">
+                    <h1><i class="fas fa-robot"></i> Motorist Q&A Assistant</h1>
+                    <p>Get instant answers to your vehicle-related questions with official links</p>
+                </div>
+
+                <!-- Chat Container -->
+                <div class="chat-container" ref="chatContainer">
+                    <div class="chat-messages">
+                        <!-- Connection Error -->
+                        <div v-if="connectionError" class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Unable to connect to the chatbot server. Please check your internet connection.
+                        </div>
+
+                        <!-- Welcome Message -->
+                        <div class="message bot" v-if="messages.length === 0 && !connectionError">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <strong>Welcome to Motorist Q&A!</strong><br>
+                                I'm here to help with your vehicle-related questions. I have access to hundreds of Q&As with official links and resources.
+                                
+                                <div class="quick-questions">
+                                    <div class="quick-question" @click="sendQuickQuestion('How do I renew my road tax?')">
+                                        Road Tax Renewal
+                                    </div>
+                                    <div class="quick-question" @click="sendQuickQuestion('What is COE renewal?')">
+                                        COE Renewal
+                                    </div>
+                                    <div class="quick-question" @click="sendQuickQuestion('How to check traffic offence?')">
+                                        Traffic Offences
+                                    </div>
+                                    <div class="quick-question" @click="sendQuickQuestion('Where can I scrap my car?')">
+                                        Car Scrapping
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Messages -->
+                        <div v-for="message in messages" :key="message.id" 
+                             :class="['message', message.type]">
+                            <div class="message-avatar">
+                                <i :class="message.type === 'user' ? 'fas fa-user' : 'fas fa-robot'"></i>
+                            </div>
+                            <div class="message-content">
+                                <div v-if="message.type === 'user'">
+                                    {{ message.content }}
+                                </div>
+                                <div v-else>
+                                    <div>{{ message.content }}</div>
+                                    
+                                    <!-- Category and Confidence -->
+                                    <div class="message-meta" v-if="message.category">
+                                        <strong>Category:</strong> {{ message.category }}
+                                        <span :class="getConfidenceClass(message.confidence)" class="confidence-badge">
+                                            {{ Math.round(message.confidence * 100) }}% match
+                                        </span>
+                                    </div>
+
+                                    <!-- URLs -->
+                                    <div v-if="message.urls && message.urls.length > 0" class="urls-section">
+                                        <strong><i class="fas fa-link"></i> Helpful Links:</strong>
+                                        <a v-for="url in message.urls" :key="url" 
+                                           :href="url" target="_blank" class="url-link"
+                                           @click="trackLinkClick(url)">
+                                            <i class="fas fa-external-link-alt"></i> {{ formatUrl(url) }}
+                                        </a>
+                                    </div>
+
+                                    <!-- Related Questions -->
+                                    <div v-if="message.related_questions && message.related_questions.length > 0" class="related-questions">
+                                        <strong><i class="fas fa-question-circle"></i> Related Questions:</strong>
+                                        <div v-for="question in message.related_questions.slice(0, 3)" :key="question"
+                                             class="related-question" @click="sendMessage(question)">
+                                            {{ question }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div v-if="isTyping" class="message bot">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="typing-indicator">
+                                    <span>Assistant is typing</span>
+                                    <div class="typing-dots">
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                        <div class="typing-dot"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scroll Anchor -->
+                        <div ref="scrollAnchor" class="scroll-anchor"></div>
+                    </div>
+                </div>
+
+                <!-- Input Section -->
+                <div class="input-section">
+                    <div class="input-container">
+                        <input 
+                            v-model="currentMessage" 
+                            @keyup.enter="sendMessage()"
+                            :disabled="isTyping || connectionError"
+                            class="message-input" 
+                            placeholder="Ask your motorist question..."
+                        >
+                        <button @click="sendMessage()" 
+                                :disabled="isTyping || !currentMessage.trim() || connectionError" 
+                                class="send-button">
+                            <div v-if="isTyping" class="loading-spinner"></div>
+                            <i v-else class="fas fa-paper-plane"></i>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    messages: [],
+                    currentMessage: '',
+                    isTyping: false,
+                    messageId: 1,
+                    connectionError: false,
+                    stats: {
+                        total_questions: 0,
+                        total_categories: 0
+                    },
+                    categories: [],
+                    categoryCounts: {}
+                }
+            },
+            async mounted() {
+                await this.checkConnection();
+                if (!this.connectionError) {
+                    await this.loadStats();
+                    await this.loadCategories();
+                }
+            },
+            methods: {
+                async checkConnection() {
+                    try {
+                        // ✅ FIXED: Using relative URL instead of localhost
+                        await axios.get('/api/health');
+                        this.connectionError = false;
+                    } catch (error) {
+                        console.error('Connection error:', error);
+                        this.connectionError = true;
+                    }
+                },
+                async loadStats() {
+                    try {
+                        // ✅ FIXED: Using relative URL instead of localhost
+                        const response = await axios.get('/api/stats');
+                        this.stats = response.data;
+                    } catch (error) {
+                        console.error('Error loading stats:', error);
+                    }
+                },
+                async loadCategories() {
+                    try {
+                        // ✅ FIXED: Using relative URL instead of localhost
+                        const response = await axios.get('/api/categories');
+                        this.categories = response.data.categories;
+                        this.categoryCounts = response.data.counts;
+                    } catch (error) {
+                        console.error('Error loading categories:', error);
+                    }
+                },
+                async sendMessage(message = null) {
+                    const messageText = message || this.currentMessage.trim();
+                    if (!messageText || this.isTyping || this.connectionError) return;
+
+                    // Add user message
+                    this.messages.push({
+                        id: this.messageId++,
+                        type: 'user',
+                        content: messageText,
+                        timestamp: new Date()
+                    });
+
+                    this.currentMessage = '';
+                    this.isTyping = true;
+                    this.scrollToBottom();
+
+                    try {
+                        // ✅ FIXED: Using relative URL instead of localhost
+                        const response = await axios.post('/api/chat', {
+                            message: messageText
+                        });
+
+                        const data = response.data;
+
+                        // Add bot response
+                        this.messages.push({
+                            id: this.messageId++,
+                            type: 'bot',
+                            content: data.response,
+                            category: data.category,
+                            confidence: data.confidence,
+                            urls: data.urls,
+                            related_questions: data.related_questions,
+                            timestamp: new Date()
+                        });
+
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        this.messages.push({
+                            id: this.messageId++,
+                            type: 'bot',
+                            content: 'Sorry, there was an error processing your request. Please try again.',
+                            category: 'Error',
+                            confidence: 0,
+                            urls: [],
+                            related_questions: [],
+                            timestamp: new Date()
+                        });
+                    }
+
+                    this.isTyping = false;
+                    this.scrollToBottom();
+                },
+                sendQuickQuestion(question) {
+                    this.sendMessage(question);
+                },
+                askAboutCategory(category) {
+                    this.sendMessage(`Tell me about ${category} questions`);
+                },
+                getConfidenceClass(confidence) {
+                    if (confidence >= 0.8) return 'confidence-high';
+                    if (confidence >= 0.5) return 'confidence-medium';
+                    return 'confidence-low';
+                },
+                formatUrl(url) {
+                    if (url.length > 60) {
+                        return url.substring(0, 57) + '...';
+                    }
+                    return url;
+                },
+                trackLinkClick(url) {
+                    console.log('Link clicked:', url);
+                },
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = this.$refs.chatContainer;
+                        const anchor = this.$refs.scrollAnchor;
+                        
+                        if (container && anchor) {
+                            // Method 1: Scroll to anchor element
+                            anchor.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'end' 
+                            });
+                            
+                            // Method 2: Fallback - scroll to bottom manually
+                            setTimeout(() => {
+                                container.scrollTop = container.scrollHeight;
+                            }, 100);
+                        }
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
